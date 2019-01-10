@@ -6,7 +6,7 @@ def main():
     ctr=0
     while(ctr<100):
         print("hi")
-        ctr++
+        ctr+=1
         sleep(30)
 
 main()
