@@ -2,7 +2,10 @@
 #import api_interface.api_data_parser as parser
 import db_accessor as db
 
-print("hi")
+def main():
+    print("hi")
+
+main()
 #db.add_to_db("nate", 20, 2, "2019-01-03", "00:00:00")
 #db.get_by_date_time("1", "2")
 #shutdown = 0
