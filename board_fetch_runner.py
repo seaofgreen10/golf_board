@@ -3,7 +3,11 @@
 import db_accessor as db
 
 def main():
-    print("hi")
+    ctr=0
+    while(ctr<100):
+        print("hi")
+        ctr++
+        sleep(30)
 
 main()
 #db.add_to_db("nate", 20, 2, "2019-01-03", "00:00:00")
