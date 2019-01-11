@@ -42,12 +42,59 @@ def get_by_date_time(date, time):
     conn.close()
 
 
-def add_to_db(name, score, rank, date, time):
+def add_score_to_db(name, score, rank, date, time):
     conn = _connect_to_db()
     cursor = conn.cursor()
 
-    cursor.execute('INSERT INTO golf_table (name, score, rank, date,time) VALUES (%s, %s, %s, %s, %s)',
-                   (name, score, rank, date, time))
+    try:
+        cursor.execute('INSERT INTO golf_table (name, score, rank, date,time) VALUES (%s, %s, %s, %s, %s)',
+                       (name, score, rank, date, time))
+    except psycopg2.Error as e:
+        print("Exception caught in add_score_to_db:")
+        print(e.pgerror)
 
     conn.commit()
     conn.close()
+
+
+def swap_starter(to_start, to_bench):
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('UPDATE public.roster'
+                       'SET is_starting = true'
+                       'WHERE player_name = \'%s\'',
+                       to_start)
+        cursor.execute('UPDATE public.roster'
+                       'SET is_starting = false'
+                       'WHERE player_name = \'%s\'',
+                       to_bench)
+    except psycopg2.Error as e:
+        print("Exception caught in swap_starter:")
+        print(e.pgerror)
+
+    conn.commit()
+    conn.close()
+
+
+def sign_player(to_add, to_drop, team, starter):
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('DELETE FROM public.roster'
+                       'WHERE player_name = \'%s\'',
+                       to_drop)
+
+        starter_str = "false"
+        if starter:
+            starter_str = "true"
+        cursor.execute('INSERT INTO public.roster'
+                       '(player_name, team, starting)'
+                       'VALUES (\'%s\', \'%s\', \'%s\')',
+                       (to_add, team, starter_str))
+    except psycopg2.Error as e:
+        print("Exception caught in sign_player:")
+        print(e.pgerror)
+
