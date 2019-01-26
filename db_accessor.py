@@ -64,11 +64,11 @@ def swap_starter(to_start, to_bench):
     try:
         cursor.execute('UPDATE public.roster'
                        'SET is_starting = true'
-                       'WHERE player_name = \'%s\'',
+                       'WHERE golfer_name = \'%s\'',
                        to_start)
         cursor.execute('UPDATE public.roster'
                        'SET is_starting = false'
-                       'WHERE player_name = \'%s\'',
+                       'WHERE golfer_name = \'%s\'',
                        to_bench)
     except psycopg2.Error as e:
         print("Exception caught in swap_starter:")
@@ -78,23 +78,45 @@ def swap_starter(to_start, to_bench):
     conn.close()
 
 
-def sign_player(to_add, to_drop, team, starter):
+def sign_golfer(to_add, to_drop, team, starter):
     conn = _connect_to_db()
     cursor = conn.cursor()
 
     try:
         cursor.execute('DELETE FROM public.roster'
-                       'WHERE player_name = \'%s\'',
+                       'WHERE golfer_name = \'%s\'',
                        to_drop)
 
         starter_str = "false"
         if starter:
             starter_str = "true"
         cursor.execute('INSERT INTO public.roster'
-                       '(player_name, team, starting)'
+                       '(golfer_name, team, starting)'
                        'VALUES (\'%s\', \'%s\', \'%s\')',
                        (to_add, team, starter_str))
     except psycopg2.Error as e:
-        print("Exception caught in sign_player:")
+        print("Exception caught in sign_golfer:")
         print(e.pgerror)
+
+
+# return a list of all golfers by name from db (public.roster)
+# param: flag to select starters only
+def get_all_golfers(starters_only=0):
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        query_str = 'SELECT golfer_name FROM public.roster'
+        if starters_only:
+            query_str += ' WHERE starting=\'true\''
+    except psycopg2.Error as e:
+        print("Exception caught in get_all_golfers:")
+        print(e.pgerror)
+
+    cursor.execute(query_str)
+    records = cursor.fetchall()
+
+    return records
+
+
 

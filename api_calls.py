@@ -1,37 +1,37 @@
-import http.client, urllib.request, urllib.parse, urllib.error
-
-headers = {
-    # Request headers
-    'Ocp-Apim-Subscription-Key': '05fab847904c416d8a4f62c412c0024c',
-}
+import requests
 
 
-def get_tournaments():
-    params = urllib.parse.urlencode({
-    })
+def get_pga_data(course, year):
+    url_str = 'https://statdata.pgatour.com/r/{}/{}/leaderboard-v2.json'.format(course, year)
 
-    try:
-        conn = http.client.HTTPSConnection('api.fantasydata.net')
-        conn.request("GET", "/golf/v2/json/Tournaments?%s" % params, "{body}", headers)
-        response = conn.getresponse()
-        data = response.read()
-        print(data)
-        conn.close()
-    except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+    pga_json_data = requests.get(url_str).json()
+
+    # For each player, in pga_json_data['leaderboard']['players'].__len__())
+    for player in pga_json_data['leaderboard']['players']:
+        print(player['player_bio']['first_name'])
+        name = player['player_bio']['first_name'] + ' ' + player['player_bio']['last_name']
 
 
-def get_leaderboard(format):
-    params = urllib.parse.urlencode({
-    })
 
-    try:
-        conn = http.client.HTTPSConnection('api.fantasydata.net')
-        conn.request("GET", "/golf/v2/"+format+"/Leaderboard/304?%s" % params, "{body}", headers)
-        response = conn.getresponse()
-        data = response.read()
-        print(data);
-        conn.close()
-        return data
-    except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+    #
+    # print(pga_json_data['leaderboard']['players'].__len__())
+    # print(pga_json_data['leaderboard']['players'][1]['player_bio']['first_name'])
+    # print(pga_json_data['leaderboard']['players'][1]['player_bio']['last_name'])
+    # print(pga_json_data['leaderboard']['players'][1]['current_position'])
+    # print(pga_json_data['leaderboard']['players'][1]['thru'])
+    # print(pga_json_data['leaderboard']['players'][1]['today'])
+    # print(pga_json_data['leaderboard']['players'][1]['total'])
+    #
+    # print(pga_json_data['leaderboard']['start_date'])
+    # print(pga_json_data['leaderboard']['end_date'])
+    # print(pga_json_data['leaderboard']['is_started']) #true/fals
+    # print(pga_json_data['leaderboard']['is_finished'])  # true/fals
+    # print(pga_json_data['leaderboard']['current_round'])
+    # print(pga_json_data['leaderboard']['round_state']) #In Progress, Official
+    #
+    # print(pga_json_data['leaderboard']['cut_line'])
+    # print(pga_json_data['leaderboard']['cut_line']['cut_line_score'])
+
+
+
+
