@@ -42,7 +42,7 @@ def get_by_date_time(date, time):
     conn.close()
 
 
-def add_score_to_db(name, score, rank, date, time):
+def add_score_to_db(name, score, today, thru, rank, date, time):
     conn = _connect_to_db()
     cursor = conn.cursor()
 
