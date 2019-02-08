@@ -1,36 +1,41 @@
 import requests
 import collections
 
-PlayerEntry = collections.namedtuple('PlayerEntry', 'name score today thru rank date time')
+PlayerEntry = collections.namedtuple('PlayerEntry', 'name score today thru rank')
 
-def _get_data_from_api(course, year):
-    url_str = 'https://statdata.pgatour.com/r/{}/{}/leaderboard-v2.json'.format(course, year)
+
+def _get_data_from_api(course='', year=''):
+    # url_str = 'https://statdata.pgatour.com/r/{}/{}/leaderboard-v2.json'.format(course, year)
+    url_str = 'https://statdata.pgatour.com/r/current/leaderboard-v2.json'
     return requests.get(url_str).json()
 
 
-def get_players_data(course, year, date, time, player_data_to_add):
+def get_players_data(course, year, list_of_players, player_data_to_add):
     # For each player, in pga_json_data['leaderboard']['players'].__len__())
     pga_json_data = _get_data_from_api(course, year)
 
     # check if we are still in progress
-    if pga_json_data['leaderboard']['round_state'] != 'In Progress':
+    if is_in_progress():
         # if tournament is no longer in progress, break
         return False
 
     for player in pga_json_data['leaderboard']['players']:
         print(player['player_bio']['first_name'])
         name = player['player_bio']['first_name'] + ' ' + player['player_bio']['last_name']
-        if True: # name matches one of chosen players
+        if name in list_of_players: 
             score = player['total']
             today = player['today']
             thru = player['thru']
-            rank = player['currrent_position']
+            rank = player['current_position']
             player_data_to_add.append(PlayerEntry(name=name, score=score, today=today, thru=thru, rank=rank))
+            print("added: " + str(player_data_to_add.__len__()))
+
+    return True
 
 
-def is_in_progress(course, year):
-    pga_json_data = _get_data_from_api(course, year)
-    if(pga_json_data['leaderboard']['round_state'] == 'In Progress'):
+def is_in_progress():
+    pga_json_data = _get_data_from_api()
+    if pga_json_data['leaderboard']['round_state'] == 'In Progress':
         return True
     else:
         return False

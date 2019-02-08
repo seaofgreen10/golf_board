@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import psycopg2
-import os
-
+import logging
+logger = logging.getLogger(__name__)
 
 def _connect_to_db():
     #DATABASE_URL = os.environ['DATABASE_URL']
@@ -29,7 +29,7 @@ def get_by_date_time(date, time):
     cursor = conn.cursor()
 
     # execute our Query
-    cursor.execute("SELECT * FROM golf_board")
+    cursor.execute('SELECT * FROM leaderboard WHERE date=%s AND time=%s', (date, time))
 
     # retrieve the records from the database
     records = cursor.fetchall()
@@ -47,8 +47,10 @@ def add_score_to_db(name, score, today, thru, rank, date, time):
     cursor = conn.cursor()
 
     try:
-        cursor.execute('INSERT INTO golf_table (name, score, rank, date,time) VALUES (%s, %s, %s, %s, %s)',
-                       (name, score, rank, date, time))
+        cursor.execute('INSERT INTO leaderboard (name, score, today, thru, rank, date, time) '
+                       'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                       (name, score, today, thru, rank, date, time))
+        logger.debug("Added row to db: %s %s" % (name, time))
     except psycopg2.Error as e:
         print("Exception caught in add_score_to_db:")
         print(e.pgerror)
@@ -62,14 +64,15 @@ def swap_starter(to_start, to_bench):
     cursor = conn.cursor()
 
     try:
-        cursor.execute('UPDATE public.roster'
-                       'SET is_starting = true'
-                       'WHERE golfer_name = \'%s\'',
+        cursor.execute('UPDATE public.roster '
+                       'SET starting = true '
+                       'WHERE golfer_name = \'%s\''%
                        to_start)
-        cursor.execute('UPDATE public.roster'
-                       'SET is_starting = false'
-                       'WHERE golfer_name = \'%s\'',
+        cursor.execute('UPDATE public.roster '
+                       'SET starting = false '
+                       'WHERE golfer_name = \'%s\'' %
                        to_bench)
+        logger.info('Swapping %s for %s' % (to_start, to_bench))
     except psycopg2.Error as e:
         print("Exception caught in swap_starter:")
         print(e.pgerror)
@@ -78,22 +81,26 @@ def swap_starter(to_start, to_bench):
     conn.close()
 
 
-def sign_golfer(to_add, to_drop, team, starter):
+def sign_golfer(to_add, team, starter, to_drop='none'):
     conn = _connect_to_db()
     cursor = conn.cursor()
 
     try:
-        cursor.execute('DELETE FROM public.roster'
-                       'WHERE golfer_name = \'%s\'',
-                       to_drop)
+        if to_drop != 'none':
+            print(to_drop)
+            cursor.execute('DELETE FROM public.roster '
+                           'WHERE golfer_name = \'%s\'' % to_drop)
 
         starter_str = "false"
         if starter:
             starter_str = "true"
-        cursor.execute('INSERT INTO public.roster'
+        cursor.execute('INSERT INTO public.roster '
                        '(golfer_name, team, starting)'
-                       'VALUES (\'%s\', \'%s\', \'%s\')',
+                       'VALUES (%s, %s, %s)',
                        (to_add, team, starter_str))
+        logger.info('Adding %s, dropping %s, team %s' % (to_add, to_drop, team))
+        conn.commit()
+        conn.close()
     except psycopg2.Error as e:
         print("Exception caught in sign_golfer:")
         print(e.pgerror)
@@ -101,7 +108,7 @@ def sign_golfer(to_add, to_drop, team, starter):
 
 # return a list of all golfers by name from db (public.roster)
 # param: flag to select starters only
-def get_all_golfers(starters_only=0):
+def get_all_golfers(starters_only=False):
     conn = _connect_to_db()
     cursor = conn.cursor()
 
@@ -109,14 +116,65 @@ def get_all_golfers(starters_only=0):
         query_str = 'SELECT golfer_name FROM public.roster'
         if starters_only:
             query_str += ' WHERE starting=\'true\''
+        cursor.execute(query_str)
+        records = cursor.fetchall()
     except psycopg2.Error as e:
         print("Exception caught in get_all_golfers:")
         print(e.pgerror)
+        return 0
 
-    cursor.execute(query_str)
-    records = cursor.fetchall()
+    names = []
+    for record in records:
+        names.append(record[0])
+    return names
 
-    return records
+
+def increment_course_id():
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('SELECT value FROM public.general WHERE field=\'course_id\'')
+        course = int(cursor.fetchone()[0])
+        course += 1
+        logger.info('Updating course id in database to %s' % str(course).zfill(3))
+        cursor.execute('UPDATE public.general '
+                       'SET value = \'%s\' '
+                       'WHERE field = \'course_id\'' %
+                       str(course).zfill(3))
+        conn.commit()
+        conn.close()
+    except psycopg2.Error as e:
+        print("Exception caught in increment_course_id:")
+        print(e.pgerror)
 
 
+def get_course_id():
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+    course = 0
+
+    try:
+        cursor.execute('SELECT value FROM public.general WHERE field=\'course_id\'')
+        course = int(cursor.fetchone()[0])
+    except psycopg2.Error as e:
+        print("Exception caught in increment_course_id:")
+        print(e.pgerror)
+
+    return str(course).zfill(3)
+
+
+def clear_leaderboard():
+    conn = _connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('DELETE FROM leaderboard')
+        logger.info('Deleting all data from leaderboard')
+
+        conn.commit()
+        conn.close()
+    except psycopg2.Error as e:
+        print("Exception caught in clear_leaderboard:")
+        print(e.pgerror)
 
