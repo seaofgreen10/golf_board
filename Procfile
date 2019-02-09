@@ -1,1 +1,1 @@
-web: python board_fetch_runner.py -p $PORT
+worker: python board_fetch_runner.py 
