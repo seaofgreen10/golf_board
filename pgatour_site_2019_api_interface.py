@@ -22,7 +22,6 @@ def get_players_data(course, year, list_of_players, player_data_to_add):
         return False
 
     for player in pga_json_data['leaderboard']['players']:
-        print(player['player_bio']['first_name'])
         name = player['player_bio']['first_name'] + ' ' + player['player_bio']['last_name']
         if name in list_of_players:
             score = player['total']
@@ -30,7 +29,7 @@ def get_players_data(course, year, list_of_players, player_data_to_add):
             thru = player['thru']
             rank = player['current_position']
             player_data_to_add.append(PlayerEntry(name=name, score=score, today=today, thru=thru, rank=rank))
-            print("added: " + str(player_data_to_add.__len__()))
+            logger.info("added: " + str(player_data_to_add.__len__()))
 
     return True
 
