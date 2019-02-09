@@ -1,6 +1,6 @@
 import requests
 import collections
-
+logger = logging.getLogger(__name__)
 PlayerEntry = collections.namedtuple('PlayerEntry', 'name score today thru rank')
 
 
@@ -15,14 +15,14 @@ def get_players_data(course, year, list_of_players, player_data_to_add):
     pga_json_data = _get_data_from_api(course, year)
 
     # check if we are still in progress
-    if is_in_progress():
+    if not is_in_progress():
         # if tournament is no longer in progress, break
         return False
 
     for player in pga_json_data['leaderboard']['players']:
         print(player['player_bio']['first_name'])
         name = player['player_bio']['first_name'] + ' ' + player['player_bio']['last_name']
-        if name in list_of_players: 
+        if name in list_of_players:
             score = player['total']
             today = player['today']
             thru = player['thru']
